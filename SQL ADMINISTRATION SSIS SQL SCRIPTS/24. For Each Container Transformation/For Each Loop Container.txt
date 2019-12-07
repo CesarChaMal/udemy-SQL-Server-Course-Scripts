@@ -1,0 +1,4 @@
+1 create a SQL table with WorldProducts
+2 create 3 text files in a products folder on drive C
+3 create a package that will loop through the products folder 
+and import data from each text file into a SQL table

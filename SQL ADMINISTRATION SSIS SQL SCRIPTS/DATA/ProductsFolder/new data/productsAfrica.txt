@@ -1,0 +1,7 @@
+ID,Product
+10,rack
+11,bulb
+12,pins
+13,coats
+14,beds
+15,rope

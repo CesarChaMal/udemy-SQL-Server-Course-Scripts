@@ -1,0 +1,11 @@
+FTP to Microsoft
+
+Import data from Microsoft ftp site
+
+
+
+ftp.microsoft.com
+
+21
+
+anonymous

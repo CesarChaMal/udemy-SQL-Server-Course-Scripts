@@ -1,0 +1,608 @@
+
+
+
+Network Working Group                                         N. Gidwani
+Internet Draft                                                 Microsoft
+expires in six months                                     April 11, 1994
+
+
+               Proposal for Callback Control Protocol (CBCP).
+                  draft-ietf-pppext-callback-cp-00.txt
+
+
+
+Status of this Memo
+
+   This document is a submission of the Point-to-Point Protocol Working
+   Group of the Internet Engineering Task Force (IETF).  Comments should
+   be submitted to the ietf-ppp@merit.edu mailing list.
+
+   Distribution of this memo is unlimited.
+
+   This document is an Internet Draft.  Internet Drafts are working
+   documents of the Internet Engineering Task Force (IETF), its Areas,
+   and its Working Groups.  Note that other groups may also distribute
+   working documents as Internet Drafts.
+
+   Internet Drafts are draft documents valid for a maximum of six
+   months.  Internet Drafts may be updated, replaced, or obsoleted by
+   other documents at any time.  It is not appropriate to use Internet
+   Drafts as reference material or to cite them other than as a
+   ``working draft'' or ``work in progress.''
+
+   Please check the 1id-abstracts.txt listing contained in the
+   internet-drafts Shadow Directories on nic.ddn.mil, ds.internic.net,
+   venera.isi.edu, nic.nordu.net, or munnari.oz.au to learn the current
+   status of any Internet Draft.
+
+
+Abstract
+
+   The Point-to-Point Protocol (PPP) provides a standard method for
+   transporting multi-protocol datagrams over point-to-point links.  PPP
+   is comprised of three main components:
+
+      1. A method for encapsulating multi-protocol datagrams.
+
+      2. A Link Control Protocol (LCP) for establishing, configuring,
+         and testing the data-link connection.
+
+      3. A family of Network Control Protocols (NCPs) for establishing
+         and configuring different network-layer protocols.
+
+
+
+Gidwani                  expires in six months                  [Page i]
+DRAFT              PPP Callback Control Protocol              April 1994
+
+   This document defines an interoperable method for negotiating
+   dial-up callback over PPP links.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Gidwani                  expires in six months                 [Page ii]
+DRAFT              PPP Callback Control Protocol              April 1994
+
+
+1.  Introduction
+
+   Up-to-date values of the LCP Option Type field are specified in the
+   most recent "Assigned Numbers" RFC [2].  This document concerns the
+   following values:
+
+      13      Callback
+
+   In "PPP LCP Extensions" [3], callback may be negotiated as part of
+   the LCP negotiation phase.
+
+   There are two problems with the current scheme:
+
+   a) There is a potential security hole. The callee has to agree or
+      disagree to do the callback BEFORE authenticating the caller.
+
+   b) The current scheme is too loosely defined to be truly
+      interoperable.
+
+   It is proposed that a new Callback Control Protocol be defined as a
+   method to implement the Callback functionality in a secure,
+   interoperable and flexible fashion.
+
+
+1.1. Specification Requirements
+
+   In this document, several words are used to signify the requirements
+   of the specification.  These words are often capitalized.
+
+   MUST      This word, or the adjective "required", means that the
+             definition is an absolute requirement of the specification.
+
+   MUST NOT  This phrase means that the definition is an absolute
+             prohibition of the specification.
+
+   SHOULD    This word, or the adjective "recommended", means that there
+             may exist valid reasons in particular circumstances to
+             ignore this item, but the full implications must be
+             understood and carefully weighed before choosing a
+             different course.
+
+   MAY       This word, or the adjective "optional", means that this
+             item is one of an allowed set of alternatives.  An
+             implementation which does not include this option MUST be
+             prepared to interoperate with another implementation which
+             does include the option.
+
+
+
+
+
+Gidwani                  expires in six months                  [Page 1]
+DRAFT              PPP Callback Control Protocol              April 1994
+
+
+1.2 Terminology
+
+   This document frequently uses the following terms:
+
+   caller    The end of the link that initiated the connection.
+
+   callee    The end of the link that accepted the connection.
+
+   peer      The other end of the point-to-point link.
+
+   silently discard
+             The implementation discards the packet without further
+             processing.  The implementation SHOULD provide the
+             capability of logging the error, including the contents of
+             the silently discarded packet, and SHOULD record the event
+             in a statistics counter.
+
+
+2.0 Overview
+
+   In the current scheme, callback is negotiated as part of the LCP
+   phase.  We will extend this scheme by adding a new operation field
+   value <TBD> to the existing Callback Configuration Option.
+
+   If an implementation responds with a Configure-Ack to the Callback
+   Configuration Option with the operation field value set to <TBD>,
+   then it is agreeing to negotiate Callback Control Protocol.
+
+   The Callback Control Protocol is run immediately after the
+   Authentication Phase if authentication was negotiated.  If
+   authentication was not negotiated then the implementation MUST
+   proceed directly to the Callback phase after the Link Establishment
+   phase. During the Callback phase all NCP and network-layer packets
+   received MUST be silently discarded.
+
+   When the Callback Control Protocol has successfully negotiated a
+   callback action, the peer MUST directly proceed to the Termination
+   phase, and the link is disconnected.
+
+   The peer then re-establishes the link, without negotiating Callback
+   during the LCP phase.
+
+   Authentication SHOULD be requested in turn by the implementation when
+   it is called back, if mutual authentication is desired.
+
+
+
+
+
+
+
+Gidwani                  expires in six months                  [Page 2]
+DRAFT              PPP Callback Control Protocol              April 1994
+
+
+
+3.0 Callback Control Protocol
+
+
+   The Callback Control Protocol is always initiated by the Callee.
+   Here is an example of such a dialog:
+
+
+        Caller                                              Callee
+        ------                                              ------
+
+                            Callback Request
+                <-----------------------------------------
+                  These are the callback options you have:
+
+                  1) Caller will not be called back.
+                  2) Caller MAY specify the address at which it
+                     wishes to be called back at.
+
+
+                            Callback Response
+                ----------------------------------------->
+                     Caller wants to be called back at xxxx.
+
+
+                            Callback Ack
+                <-----------------------------------------
+                     OK, Caller will be called back at xxxx.
+                   Disconnect and prepare to receive a call.
+
+
+
+
+   In the Callback Phase, the Callee will send a Callback Request
+   listing the callback options available to the Caller.  Additional
+   Callback Request packets MUST be sent until a valid Callback Response
+   packet is received, or an optional retry counter expires.  If the
+   retry counter expires, the implementation MUST terminate the link and
+   MUST NOT proceed to the NCP phase.
+
+   The Caller will respond with a Callback Response listing only the
+   option that it wishes to use. The data of the option MAY be modified.
+
+   If the Callback Response sent back by the Caller is valid and
+   acceptable to the Callee, it will respond with a Callback Ack.  Upon
+   receiving the the Callback Ack the Caller should proceed to the Link
+   Termination phase and prepare to receive a call.
+
+
+
+
+Gidwani                  expires in six months                  [Page 3]
+DRAFT              PPP Callback Control Protocol              April 1994
+
+
+   The only exception to the above occurs if the Caller requested not to
+   be called back and the Callee responded with a Callback Ack then both
+   peers MUST proceed to the NCP phase.
+
+   If the Callback Response contains any invalid or unacceptable data,
+   the Callee MAY terminate the link, or resend the Callback Request.
+   The Callee MUST NOT proceed to the NCP phase.
+
+   Because the Callback Ack send to the Caller may be lost the Callee
+   MUST wait for the Caller to send a LCP Terminate-Req or to resend the
+   Callback Response.
+
+
+
+3.1 Packet Format
+
+   Exactly one Callback Control Protocol packet is encapsulated
+   in the Information field of a PPP Data Link Layer frame.
+   A summary of the CBCP packet format is shown below.  The
+   fields are transmitted from left to right.
+
+    0                   1                   2                   3
+    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |     Code      |  Identifier   |            Length             |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |    Data ...
+   +-+-+-+-+
+
+   Code
+
+      The Code field is one octet and identifies the type of CBCP
+      packet.  CBCP Codes are assigned as follows:
+
+         1       Callback Request       ( Callee -> Caller )
+         2       Callback Response      ( Caller -> Callee )
+         3       Callback Ack           ( Callee -> Caller )
+
+   Identifier
+
+      The Identifier field is one octet and aids in matching requests
+      and replies.
+
+   Length
+
+      The Length field is two octets and indicates the length of the
+      CBCP packet including the Code, Identifier, Length and Data
+      fields.  Octets outside the range of the Length field should be
+      treated as Data Link Layer padding and should be ignored on
+      reception.
+
+Gidwani                  expires in six months                  [Page 4]
+DRAFT              PPP Callback Control Protocol              April 1994
+
+
+   Data
+
+      The Data field is zero or more octets.
+
+
+
+3.2 Callback Configuration Options
+
+    0                   1                   2
+    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   | Callback Type |    Length     |Callback delay |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   | Callback Address(es) ...
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+
+    Callback Type
+
+    1 - No callback
+    2 - Callback to a pre-specified or administrator specified number.
+    3 - Callback to a user-specifiable number.
+    4 - Callback to any of a list of numbers.
+
+
+    Length
+
+      The Length field is one octet and indicates the length of the
+      Callback Option including the Type, Length and Data fields.
+
+      >=3
+
+
+    Callback delay
+
+        The amount of time is seconds the Callee MUST wait before
+        calling the Caller back.  Callee sets to 0, Caller MAY change if
+        the required value if is different from 0.
+
+        <= 255
+
+
+
+
+
+
+
+
+
+
+
+
+Gidwani                  expires in six months                  [Page 5]
+DRAFT              PPP Callback Control Protocol              April 1994
+
+
+    Callback Addresses
+
+    0                   1                   2
+    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   | Address Type  |    ASCIIZ address
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+        Address Type
+
+            1 - for PSTN/ISDN
+
+            Other? (TBD)
+
+        Address Format
+
+            For PSTN/ISDN this is an NULL terminated ASCII string.
+
+            Valid characters are 0-9, *, #, T, P, W, @, comma, space,
+            dash, and parentheses."
+
+
+
+3.2.1 No Callback
+
+    The Caller requests not to be called back at all. The Callback Type
+    is set to 1.
+
+    No Callback address or Callback Delay field is supplied.
+
+
+3.2.2 Callback to a Caller-specifiable number.
+
+    The Caller requests to be called back at a specified address.  The
+    Callback Type field is set to 2.
+
+    Callback address and the Callback Delay are both present.
+
+    When the Callee sends this option as part of the list of Callback
+    options available to the Caller, the Callback Delay field is present
+    and set to 0, Address Type field of the Callback Address is set but
+    the ASCIIZ address contains a terminating NULL.
+
+    The Caller MUST respond with a Callback Response which contains an
+    ASCIIZ Callback address that matches the Address Type field send by
+    the Callee in the Callback Request. The Caller MAY modify the value
+    of the Callback Delay.
+
+
+
+
+Gidwani                  expires in six months                  [Page 6]
+DRAFT                   Callback Control Protocol             April 1994
+
+
+3.2.3 Callback to a pre-specified or administrator specified number.
+
+    The Caller will be called back at specified address. The Callback
+    Type field is set to 3.
+
+    Only the Callback Delay field is present in the is Callback Request.
+
+    The Caller MAY modify the Callback Delay field.
+
+
+3.2.4 Callback to any of a list of numbers.
+
+    The Caller will be called back at one of the specified address. The
+    Callback Type field is set to 4.
+
+    The Callback Request consists of the Callback Delay field followed
+    by a list of Callback Addresses.
+
+    The Callback Response MUST contain the Callback Delay and only one
+    of the Callback Addresses chosen from the list sent by the Callee.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Gidwani                  expires in six months                  [Page 7]
+DRAFT                   Callback Control Protocol             April 1994
+
+
+Security Considerations
+
+   Security issues are briefly discussed in sections concerning the
+   Callback Configuration Option.
+
+
+
+References
+
+   [1]   Simpson, W., Editor, "The Point-to-Point Protocol (PPP)", RFC
+         1548, Daydreamer, December 1993.
+
+   [2]   Reynolds, J., and J. Postel, "Assigned Numbers", STD 2,
+         RFC 1340, USC/Information Sciences Institute, July 1992.
+
+   [3]   Simpson, W., Editor, "PPP LCP Extensions", RFC 1570,
+         Daydreamer, January 1994.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Gidwani                  expires in six months                  [Page 8]
+DRAFT              PPP Callback Control Protocol              April 1994
+
+
+Acknowledgments
+
+   TBD.
+
+
+Chair's Address
+
+   The working group can be contacted via the current chair:
+
+      Fred Baker
+      Advanced Computer Communications
+      315 Bollay Drive
+      Santa Barbara, California  93117
+
+      EMail: fbaker@acc.com
+
+
+Author's Address
+
+   Questions about this memo can also be directed to:
+
+      Narendra Gidwani
+      Microsoft Corporation
+      1 Microsoft Way
+      Redmond, WA 98052-6399
+
+      EMail: nareng@microsoft.com
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Gidwani                  expires in six months                  [Page 9]
+
+
+

@@ -1,0 +1,16 @@
+1. create a ssis for each loop container
+2. go to collection and direct to folder with text files
+3. choose name and extention
+4. create a varible for the path so as not to repeat the process
+5. go to expression and choose directory, chose varible, chosee name and extention
+6. create a new varible for the file name
+7. create a new data flow task inside the for each loop container
+8. create a flat file task and direct to any text file
+9. create sql destination and map columns
+10. change the expression of the flat file connections, or it will duplicate the files
+    select connectionstring, concatenate the folderpath and filename:
+     @[User::folderpath] + "\\" +  @[User::filename]
+
+11. 
+
+truncate table [SSISProjects].[dbo].[WorldProducts]
